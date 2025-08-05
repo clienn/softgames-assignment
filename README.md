@@ -1,5 +1,5 @@
 # softgames-assignment
-
+<pre>
 PixiJS Animated Card Spread
 
 This project demonstrates an animated spread of cards using PixiJS, a powerful WebGL-based rendering library. It features an interactive fan-style animation of tarot cards with smooth transitions and performance tracking.
@@ -51,3 +51,4 @@ Feel free to fork this project and submit pull requests to improve the animation
 License
 
 This project is licensed under the MIT License.
+</pre>
