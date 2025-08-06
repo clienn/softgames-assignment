@@ -36,8 +36,6 @@ export async function startCardSpread(
     back.position.set(16, 16);
     back.zIndex = 1000;
     back.on("pointerdown", () => {
-      // stop the spread animation ticker
-    //   app.ticker.remove(tickerCallback);
       ticker.stop();
       ticker.destroy();
       // clear the scene
@@ -46,12 +44,10 @@ export async function startCardSpread(
       fpsDiv.remove();
 
       onBack();
-      // go back to menu
-    //   startMenuScene(scene, app);
     });
     scene.addChild(back);
 
-    const sheet = await Assets.load('/public/assets/tarot.png');
+    const sheet = await Assets.load('./public/assets/tarot.png');
     const cardWidth = 71;
     const cardHeight = 95;
 
@@ -162,8 +158,10 @@ export async function startCardSpread(
     const ARC_MIN = 0.06;
     let currArc = 0.6;
 
-    const DURATION = 2000;             // ms
+    const ANIMATION_DURATION = 2000;             // ms
+    const THROW_DURATION = 1000;             // ms
     let   elapsed  = 0;
+    let   cardAnim: any = [];
 
     const fromPos: any = [];
 
@@ -172,60 +170,6 @@ export async function startCardSpread(
         y:   window.innerHeight * 0.2,
         rot: 180 * Math.PI / 180,
     };
-
-    // app.ticker.add((delta) => {
-    //     if (currCard < totalCards && currArc > ARC_MIN) {
-    //         initCards(arc, ++currCard, totalCards, true);
-    //     } else {
-    //         if (currArc > ARC_MIN) {
-    //             currArc = Math.max(currArc - 0.01 * delta.deltaTime, ARC_MIN);
-
-    //             initCards(Math.PI * currArc, 0, totalCards);
-                
-    //             // assing final position of cards 
-    //             // (prep for interpolation distribution)
-    //             if (currArc == ARC_MIN) {
-    //                 for (let i = 0; i < totalCards; ++i) {
-    //                     fromPos[i] = { 
-    //                         x: cards[i].x, 
-    //                         y: cards[i].y,
-    //                         rot: cards[i].rotation
-    //                     };
-    //                 }
-    //             }
-    //         } else {
-    //             const c = cards[currCard - 1];
-    //             const from = fromPos[currCard - 1];
-
-    //             elapsed += delta.deltaMS;
-    //             let t = Math.min(elapsed / DURATION, 1);
-
-    //             let adj = 0.1 * (totalCards - currCard)
-    //             c.y = lerp(from.y,   to.y,   t);
-    //             c.rotation = lerp(from.rot, ((180 + adj) * Math.PI / 180) - from.rot, t);
-
-    //             if (t === 1) {
-    //                 if (c.parent === scene) {
-    //                     scene.setChildIndex(c, totalCards - currCard);
-    //                 }
-    //                 --currCard;
-    //                 elapsed = 0;
-                    
-    //                 initCards(Math.PI * currArc, 0, currCard);
-
-    //                 /** 
-    //                  * just somoe manual adjustment so at the end both stacks
-    //                  * have cards.
-    //                  * */  
-    //                 if (currCard < 10) {
-    //                     app.ticker.stop();
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     fpsDiv.textContent = `FPS: ${app.ticker.FPS.toFixed(1)}`;
-    // });
 
     ticker.add(function(this: Ticker, delta) {
         // your loop
@@ -247,27 +191,55 @@ export async function startCardSpread(
                             rot: cards[i].rotation
                         };
                     }
+
+                    // push top card
+                    // cardAnim.push({ idx: currCard - 1, t: 0 });
                 }
             } else {
-                const c = cards[currCard - 1];
-                const from = fromPos[currCard - 1];
-
+                // stack to stack animation timer
                 elapsed += delta.deltaMS;
-                let t = Math.min(elapsed / DURATION, 1);
+                let t = Math.min(elapsed / THROW_DURATION, 1);
 
-                let adj = 0.1 * (totalCards - currCard)
-                c.y = lerp(from.y,   to.y,   t);
-                c.rotation = lerp(from.rot, ((180 + adj) * Math.PI / 180) - from.rot, t);
+                // since were shifting array during loop the length might change if accessed directly
+                // let len = cardAnim.length;
+
+                // for (let i = 0; i < len; ++i) {
+                for (const anim of cardAnim) {
+                    // const anim = cardAnim[i];
+                    const c = cards[anim.idx];
+                    const from = fromPos[anim.idx];
+
+                    // just to make sure the current card is on top
+                    if (c.parent === scene) { // check if not removed from scene to avoid errors
+                        scene.setChildIndex(c, totalCards);
+                    }
+
+                    anim.t += delta.deltaMS;
+
+                    // throw timer
+                    let u = Math.min(anim.t / ANIMATION_DURATION, 1);
+
+                    let adj = 0.1 * (totalCards - currCard)
+                    c.y = lerp(from.y, to.y, u);
+                    c.rotation = lerp(from.rot, ((180 + adj) * Math.PI / 180) - from.rot, u);
+
+                    if (u === 1) {
+                        if (c.parent === scene) { // check if not removed from scene to avoid errors
+                            scene.setChildIndex(c, totalCards - anim.idx);
+                        }
+
+                        // anim.t = 0;
+                        cardAnim.shift();
+                    }
+                }
 
                 if (t === 1) {
-                    if (c.parent === scene) {
-                        scene.setChildIndex(c, totalCards - currCard);
-                    }
                     --currCard;
                     elapsed = 0;
+
+                    cardAnim.push({ idx: currCard, t: 0 });
                     
                     initCards(Math.PI * currArc, 0, currCard);
-
                     /** 
                      * just somoe manual adjustment so at the end both stacks
                      * have cards.
