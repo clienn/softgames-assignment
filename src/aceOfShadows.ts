@@ -200,6 +200,8 @@ export async function startCardSpread(
                 for (const anim of cardAnim) {
                     const c = cards[anim.idx];
                     const from = fromPos[anim.idx];
+                    
+                    if (!c) continue;
 
                     // just to make sure the current card is on top
                     if (c.parent === scene) { // check if not removed from scene to avoid errors
@@ -237,7 +239,7 @@ export async function startCardSpread(
                      * have cards.
                      * */  
                     if (currCard < 10) {
-                        app.ticker.stop();
+                        // app.ticker.stop();
                     }
                 }
             }
