@@ -191,21 +191,13 @@ export async function startCardSpread(
                             rot: cards[i].rotation
                         };
                     }
-
-                    // push top card
-                    // cardAnim.push({ idx: currCard - 1, t: 0 });
                 }
             } else {
                 // stack to stack animation timer
                 elapsed += delta.deltaMS;
                 let t = Math.min(elapsed / THROW_DURATION, 1);
 
-                // since were shifting array during loop the length might change if accessed directly
-                // let len = cardAnim.length;
-
-                // for (let i = 0; i < len; ++i) {
                 for (const anim of cardAnim) {
-                    // const anim = cardAnim[i];
                     const c = cards[anim.idx];
                     const from = fromPos[anim.idx];
 
